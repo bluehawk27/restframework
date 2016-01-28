@@ -9,8 +9,10 @@ https://docs.djangoproject.com/en/1.9/topics/settings/
 For the full list of settings and their values, see
 https://docs.djangoproject.com/en/1.9/ref/settings/
 """
-
+import logging
+import logging.config
 import os
+from os import environ
 
 # Build paths inside the project like this: os.path.join(BASE_DIR, ...)
 BASE_DIR = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
@@ -37,6 +39,8 @@ INSTALLED_APPS = [
     'django.contrib.sessions',
     'django.contrib.messages',
     'django.contrib.staticfiles',
+    'rest_framework',
+    'snippets'
 ]
 
 MIDDLEWARE_CLASSES = [
@@ -119,3 +123,49 @@ USE_TZ = True
 # https://docs.djangoproject.com/en/1.9/howto/static-files/
 
 STATIC_URL = '/static/'
+
+
+logging.config.dictConfig({
+    "version": 1,
+    "disable_existing_loggers": False,
+    "formatters": {
+        "simple": {
+            "format": "%(name)s %(message)s",
+        },
+        "verbose": {
+            "format": (
+                "%(levelname)s %(asctime)s %(module)s "
+                "%(process)d %(thread)d %(message)s"
+            ),
+        },
+    },
+    "handlers": {
+        "console": {
+            "level": "DEBUG",
+            "class": "logging.StreamHandler",
+            "formatter": "simple",
+        },
+    },
+    "filters": {
+        "require_debug_false": {
+            "()": "django.utils.log.RequireDebugFalse"
+        },
+    },
+    "loggers": {
+        # Create a default loggers that simply passes everything to the
+        # defined handlers without any filtering.
+        "": {
+            "level": "DEBUG",
+            "handlers": ["console"],
+        },
+        # Don't pass warnings and disallowed hosts to default loggers.
+        "py.warnings": {
+            "handlers": ["console"],
+            "propagate": False,
+        },
+        "django.security.DisallowedHost": {
+            "handlers": ["console"],
+            "propagate": False,
+        },
+    },
+})
