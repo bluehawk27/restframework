@@ -9,9 +9,11 @@ from snippets.models import Snippet
 from snippets.serializers import SnippetSerializer, UserSerializer
 # from rest_framework import mixins  Class Based Views with Mixins
 from rest_framework import generics
+from rest_framework import viewsets
 from django.contrib.auth.models import User
 from rest_framework import permissions
 from snippets.permissions import IsOwnerOrReadonly
+from rest_framework.decorators import detail_route
 
 
 @api_view(('GET',))
@@ -30,35 +32,65 @@ class SnippetHighlight(generics.GenericAPIView):
         snippet = self.get_object()
         return Response(snippet.highlighted)
 
+
+class UserViewSet(viewsets.ReadOnlyModelViewSet):
+    """
+    This viewset automatically provides `list` and `detail` actions.
+    """
+    queryset = User.objects.all()
+    serializer_class = UserSerializer
+
+# ^^^^^^^^^^^^^^^^^^^^^^^^^^^ Refactored to VIEWSETS
+
 """
 Generic Class Based Views
 """
 
-
-class UserList(generics.ListAPIView):
-    queryset = User.objects.all()
-    serializer_class = UserSerializer
-
-
-class UserDetail(generics.RetrieveAPIView):
-    queryset = User.objects.all()
-    serializer_class = UserSerializer
+# class UserList(generics.ListAPIView):
+#     queryset = User.objects.all()
+#     serializer_class = UserSerializer
 
 
-class SnippetList(generics.ListCreateAPIView):
+# class UserDetail(generics.RetrieveAPIView):
+#     queryset = User.objects.all()
+#     serializer_class = UserSerializer
+
+
+class SnipppetViewSet(viewsets.ModelViewSet):
+    """
+    This viewset automatically provides `list`, `create`, `retrieve`,
+    `update` and `destroy` actions.
+
+    Additionally we also provide an extra `highlight` action.
+    """
     queryset = Snippet.objects.all()
     serializer_class = SnippetSerializer
-    permission_classes = (permissions.IsAuthenticatedOrReadOnly,)
+    permission_classes = (permissions.IsAuthenticatedOrReadOnly,
+                          IsOwnerOrReadonly,)
+
+    @detail_route(renderer_classes=[renderers.StaticHTMLRenderer])
+    def highlight(self, request, *args, **kwargs):
+        snippet = self.get_object()
+        return Response(snippet.highlighted)
 
     def perform_create(self, serializer):
         serializer.save(owner=self.request.user)
 
+# ^^^^^^^^^^^^^^^^^^^^ Refactored to VIEWSETS ^^^^^^^^^^^^^
+# class SnippetList(generics.ListCreateAPIView):
+#     queryset = Snippet.objects.all()
+#     serializer_class = SnippetSerializer
+#     permission_classes = (permissions.IsAuthenticatedOrReadOnly,)
 
-class SnippetDetail(generics.RetrieveUpdateDestroyAPIView):
-    queryset = Snippet.objects.all()
-    serializer_class = SnippetSerializer
-    permission_classes = (permissions.IsAuthenticatedOrReadOnly,
-                          IsOwnerOrReadonly)
+#     def perform_create(self, serializer):
+#         serializer.save(owner=self.request.user)
+
+
+# class SnippetDetail(generics.RetrieveUpdateDestroyAPIView):
+#     queryset = Snippet.objects.all()
+#     serializer_class = SnippetSerializer
+#     permission_classes = (permissions.IsAuthenticatedOrReadOnly,
+#                           IsOwnerOrReadonly)
 
 """
 Class Based Views Mixins
@@ -136,7 +168,7 @@ Class Based Views
 #         if serializer.is_valid():
 #             serializer.save()
 #             return Response(serializer.data)
-#         return Response(serializer.errors, status=status.HTTP_400_BAD_REQUEST)
+#        return Response(serializer.errors, status=status.HTTP_400_BAD_REQUEST)
 
 #     def delete(self, request, pk, format=None):
 #         snippet = self.get_object(pk)
@@ -144,7 +176,7 @@ Class Based Views
 #         return Response(status=status.HTTP_204_NO_CONTENT)
 
 
-################################################################################
+###############################################################################
 """
 Function Based Views
 """
@@ -163,7 +195,7 @@ Function Based Views
 #         if serializer.is_valid():
 #             serializer.save()
 #             return Response(serializer.data, status=status.HTTP_201_CREATED)
-#         return Response(serializer.errors, status=status.HTTP_400_BAD_REQUEST)
+#        return Response(serializer.errors, status=status.HTTP_400_BAD_REQUEST)
 
 
 # @api_view(['GET', 'PUT', 'DELETE'])
@@ -186,7 +218,7 @@ Function Based Views
 #         if serializer.is_valid():
 #             serializer.save()
 #             return Response(serializer.data)
-#         return Response(serializer.errors, status=status.HTTP_400_BAD_REQUEST)
+#        return Response(serializer.errors, status=status.HTTP_400_BAD_REQUEST)
 
 #     elif request.method == 'DELETE':
 #         snippet.delete()
