@@ -4,23 +4,42 @@
 # from django.http import Http404  Class Based Views with mixins
 # from rest_framework.response import Response  Class Based Views with mixins
 from snippets.models import Snippet
-from snippets.serializers import SnippetSerializer
+from snippets.serializers import SnippetSerializer, UserSerializer
 # from rest_framework import mixins  Class Based Views with Mixins
 from rest_framework import generics
+from django.contrib.auth.models import User
+from rest_framework import permissions
+from snippets.permissions import IsOwnerOrReadonly
 
 """
 Generic Class Based Views
 """
 
 
+class UserList(generics.ListAPIView):
+    queryset = User.objects.all()
+    serializer_class = UserSerializer
+
+
+class UserDetail(generics.RetrieveAPIView):
+    queryset = User.objects.all()
+    serializer_class = UserSerializer
+
+
 class SnippetList(generics.ListCreateAPIView):
     queryset = Snippet.objects.all()
     serializer_class = SnippetSerializer
+    permission_classes = (permissions.IsAuthenticatedOrReadOnly,)
+
+    def perform_create(self, serializer):
+        serializer.save(owner=self.request.user)
 
 
 class SnippetDetail(generics.RetrieveUpdateDestroyAPIView):
     queryset = Snippet.objects.all()
-    serialcer_class = SnippetSerializer
+    serializer_class = SnippetSerializer
+    permission_classes = (permissions.IsAuthenticatedOrReadOnly,
+                          IsOwnerOrReadonly)
 
 """
 Class Based Views Mixins
@@ -73,7 +92,8 @@ Class Based Views
 #         if serializer.is_valid():
 #             serializer.save()
 #             return Response(serializer.data, status=status.HTPP_201_CREATED)
-#         return Response(serializer.errors, status=status.HTTP_400_BAD_REQUEST)
+#         return Response(serializer.errors,
+#                         status=status.HTTP_400_BAD_REQUEST)
 
 
 # class SnippetDetail(APIView):
