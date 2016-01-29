@@ -1,8 +1,10 @@
 # from rest_framework import status  Class Based Views with mixins
-# from rest_framework.decorators import api_view  Function based views
+from rest_framework.decorators import api_view  # Function based views
 # from rest_framework.views import APIView Class Based Views with mixins
 # from django.http import Http404  Class Based Views with mixins
-# from rest_framework.response import Response  Class Based Views with mixins
+from rest_framework.response import Response  # Class Based Views with mixins
+from rest_framework import renderers
+from rest_framework.reverse import reverse
 from snippets.models import Snippet
 from snippets.serializers import SnippetSerializer, UserSerializer
 # from rest_framework import mixins  Class Based Views with Mixins
@@ -10,6 +12,23 @@ from rest_framework import generics
 from django.contrib.auth.models import User
 from rest_framework import permissions
 from snippets.permissions import IsOwnerOrReadonly
+
+
+@api_view(('GET',))
+def api_root(request, format=None):
+    return Response({
+        'users': reverse('user-list', request=request, format=format),
+        'snippets': reverse('snippet-list', request=request, format=format)
+    })
+
+
+class SnippetHighlight(generics.GenericAPIView):
+    queryset = Snippet.objects.all()
+    renderer_classes = (renderers.StaticHTMLRenderer,)
+
+    def get(self, request, *args, **kwargs):
+        snippet = self.get_object()
+        return Response(snippet.highlighted)
 
 """
 Generic Class Based Views
